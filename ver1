@@ -1,50 +1,55 @@
 function simulate_4ASK_system(bitStream, blockSizeBits, saveFile)
-% Mo phong he thong dieu che 4-ASK cho chuoi bit rat lon
-% bitStream: chuoi bit 0/1 (vector cot)
-% blockSizeBits: so bit cho moi block (de giam RAM)
-% saveFile: file .mat de luu modulatedSignal
+% Mo phong he thong dieu che 4-ASK, chuoi bit rat lon, ghi thang vao file
 
     if nargin < 3
         saveFile = 'modulated_signal.mat';
     end
 
-    % Cac thong so
     bitsPerSymbol = 2;
-    samplesPerSymbol = 100; % Oversample factor (neu can)
+    samplesPerSymbol = 100; % neu can oversampling
     numBits = length(bitStream);
     numSymbols = ceil(numBits / bitsPerSymbol);
 
-    % Pre-allocate file storage
-    modulatedSignal = [];
+    % Tao file mat moi
+    if exist(saveFile, 'file')
+        delete(saveFile);
+    end
 
-    idx = 1;
-    blockIdx = 0;
+    % Tạo biến trống và lưu lần đầu
+    modulatedSignal = [];
+    save(saveFile, 'modulatedSignal', '-v7.3');
+
 
     while idx <= numBits
         blockIdx = blockIdx + 1;
-        % Chia ra 1 block
         endIdx = min(idx + blockSizeBits - 1, numBits);
         bitBlock = bitStream(idx:endIdx);
 
-        % Bo sung neu block le so bit
+        % Bo sung bit neu le
         if mod(length(bitBlock),2) ~= 0
             bitBlock = [bitBlock; 0];
         end
 
-        % Map bitBlock thanh symbolBlock (4-ASK)
+        % Map bitBlock -> symbolBlock
         symbolBlock = bits_to_symbols(bitBlock);
 
-        % Ghi noi tiep vao modulatedSignal
-        modulatedSignal = [modulatedSignal; symbolBlock];
+        % Ghi xuong file mat (append)
+        if blockIdx == 1
+            modulatedSignal = symbolBlock;
+            save(saveFile, signalVarName, '-append');
+        else
+            load(saveFile, 'modulatedSignal');
+            modulatedSignal = [modulatedSignal; symbolBlock];
+            save(saveFile, 'modulatedSignal', '-append');
+
+        end
 
         disp(['Dang xu ly block #', num2str(blockIdx), ', tu bit ', num2str(idx), ' den ', num2str(endIdx)]);
 
         idx = endIdx + 1;
     end
 
-    % Luu ket qua
-    save(saveFile, 'modulatedSignal', '-v7.3');
-    disp(['Da luu file modulatedSignal vao ', saveFile]);
+    disp(['Da luu xong file: ', saveFile]);
 end
 
 function symbols = bits_to_symbols(bits)
