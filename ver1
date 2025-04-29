@@ -1,59 +1,52 @@
 function simulate_4ASK_system(bitStream, blockSizeBits, saveFile)
-% Mo phong he thong dieu che 4-ASK, chuoi bit rat lon, ghi thang vao file
+% Mo phong he thong dieu che 4-ASK, xu ly chuoi bit rat lon, ghi luu theo block
 
     if nargin < 3
         saveFile = 'modulated_signal.mat';
     end
 
     bitsPerSymbol = 2;
-    samplesPerSymbol = 100; % neu can oversampling
     numBits = length(bitStream);
-    numSymbols = ceil(numBits / bitsPerSymbol);
 
-    % Tao file mat moi
+    % Neu file ton tai thi xoa di
     if exist(saveFile, 'file')
         delete(saveFile);
     end
 
-    % Tạo biến trống và lưu lần đầu
+    % Khoi tao file .mat voi bien trong
     modulatedSignal = [];
     save(saveFile, 'modulatedSignal', '-v7.3');
 
+    idx = 1;        % bat dau tu bit thu 1
+    blockIdx = 0;   % dem so block
 
     while idx <= numBits
         blockIdx = blockIdx + 1;
         endIdx = min(idx + blockSizeBits - 1, numBits);
         bitBlock = bitStream(idx:endIdx);
 
-        % Bo sung bit neu le
-        if mod(length(bitBlock),2) ~= 0
+        % Neu le so bit thi them 1 bit 0 vao cuoi
+        if mod(length(bitBlock), 2) ~= 0
             bitBlock = [bitBlock; 0];
         end
 
-        % Map bitBlock -> symbolBlock
+        % Map 2 bit thanh 1 symbol 4-ASK
         symbolBlock = bits_to_symbols(bitBlock);
 
-        % Ghi xuong file mat (append)
-        if blockIdx == 1
-            modulatedSignal = symbolBlock;
-            save(saveFile, signalVarName, '-append');
-        else
-            load(saveFile, 'modulatedSignal');
-            modulatedSignal = [modulatedSignal; symbolBlock];
-            save(saveFile, 'modulatedSignal', '-append');
-
-        end
+        % Luu ket qua xuong file (append)
+        load(saveFile, 'modulatedSignal');
+        modulatedSignal = [modulatedSignal; symbolBlock];
+        save(saveFile, 'modulatedSignal', '-v7.3');
 
         disp(['Dang xu ly block #', num2str(blockIdx), ', tu bit ', num2str(idx), ' den ', num2str(endIdx)]);
-
         idx = endIdx + 1;
     end
 
-    disp(['Da luu xong file: ', saveFile]);
+    disp(['--> Da luu xong file: ', saveFile]);
 end
 
 function symbols = bits_to_symbols(bits)
-    % Chuyen 2 bits -> 1 symbol 4-ASK
+    % Chuyen 2 bit thanh 1 symbol theo 4-ASK
     bits = reshape(bits, 2, []).';
     symbolMapping = [-3, -1, 3, 1]/sqrt(5); % 00->-3, 01->-1, 10->3, 11->1
     idx = bits(:,1)*2 + bits(:,2) + 1;
